@@ -1,29 +1,47 @@
-name: Node.js CI
+name: Reusable CI Workflow
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        default: "18"
+      run-tests:
+        description: "Run the test suite?"
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      NPM_TOKEN:
+        required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: "https://registry.npmjs.org"
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        if: ${{ inputs.run-tests == 'true' }}
+        run: npm test
 
-    - name: Run script
-      run: node index.js
+      - name: Build project
+        run: npm run build
+
+      - name: Publish package (optional)
+        if: ${{ secrets.NPM_TOKEN != '' }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
