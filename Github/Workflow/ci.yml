@@ -1,47 +1,25 @@
-name: Reusable CI Workflow
+name: Run Script on Push
 
 on:
-  workflow_call:
-    inputs:
-      node-version:
-        description: "Node.js version to use"
-        required: false
-        default: "18"
-      run-tests:
-        description: "Run the test suite?"
-        required: false
-        type: boolean
-        default: true
-    secrets:
-      NPM_TOKEN:
-        required: false
+  push:
+    branches:
+      - main
+      - "**"   # triggers on push to any branch (optional)
 
 jobs:
-  build:
+  run-script-job:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node-version }}
-          registry-url: "https://registry.npmjs.org"
+      - name: Set up environment
+        run: |
+          echo "Environment setup complete"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Make script executable (optional)
+        run: chmod +x ./scripts/myscript.sh
 
-      - name: Run tests
-        if: ${{ inputs.run-tests == 'true' }}
-        run: npm test
-
-      - name: Build project
-        run: npm run build
-
-      - name: Publish package (optional)
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Run the script
+        run: ./scripts/myscript.sh
